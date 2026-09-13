@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Трекер кишенькових витрат</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header>
+    <h1>Трекер витрат</h1>
+    <nav>
+      <ul>
+        <li><a href="#add-transaction">Додати операцію</a></li>
+        <li><a href="#transactions-list">Історія операцій</a></li>
+        <li><a href="#balance-summary">Підсумковий баланс</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+
+    <section id="add-transaction">
+      <h2>Додати операцію</h2>
+      <form action="#" method="post">
+        <div>
+          <label for="transaction-title">Назва / опис операції:</label>
+          <input type="text" id="transaction-title" name="title" required placeholder="Наприклад, Обід у їдальні">
+        </div>
+
+        <div>
+          <label for="transaction-amount">Сума (грн):</label>
+          <input type="number" id="transaction-amount" name="amount" step="0.01" required placeholder="120.00">
+        </div>
+
+        <div>
+          <label for="transaction-type">Тип операції:</label>
+          <select id="transaction-type" name="type">
+            <option value="expense">Витрата</option>
+            <option value="income">Дохід</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="transaction-category">Категорія:</label>
+          <select id="transaction-category" name="category">
+            <option value="food">Харчування</option>
+            <option value="transport">Транспорт</option>
+            <option value="entertainment">Розваги</option>
+            <option value="study">Навчання</option>
+            <option value="other">Інше</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="transaction-date">Дата:</label>
+          <input type="date" id="transaction-date" name="date" required>
+        </div>
+
+        <button type="submit">Зберегти операцію</button>
+      </form>
+    </section>
+
+    <section id="transactions-list">
+      <h2>Операції</h2>
+
+      <article>
+        <h3>-150.00 грн — Харчування</h3>
+        <p><strong>Опис:</strong> Комплексний обід</p>
+        <time datetime="2026-09-13">13 вересня 2026</time>
+      </article>
+
+      <article>
+        <h3>-30.00 грн — Транспорт</h3>
+        <p><strong>Опис:</strong> Поїздка на метро</p>
+        <time datetime="2026-09-12">12 вересня 2026</time>
+      </article>
+
+      <article>
+        <h3>+1000.00 грн — Дохід</h3>
+        <p><strong>Опис:</strong> Кишенькові кошти</p>
+        <time datetime="2026-09-10">10 вересня 2026</time>
+      </article>
+    </section>
+  </main>
+
+  <aside id="balance-summary">
+    <h2>Підсумковий баланс</h2>
+    <p><strong>Поточний залишок:</strong> <span>820.00 грн</span></p>
+    <ul>
+      <li>Загальний дохід: +1000.00 грн</li>
+      <li>Загальні витрати: -180.00 грн</li>
+    </ul>
+  </aside>
+
+  <footer>
+    <p>2026 Трекер кишенькових витрат</p>
+  </footer>
+
+</body>
+</html>
