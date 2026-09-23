@@ -1,0 +1,193 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #1f2933;
+  background-color: #f4f5f7;
+}
+
+header {
+  background: linear-gradient(90deg, #263238, #37474f);
+  padding: 1rem 1.5rem;
+  border-bottom: 3px solid #2e7d32;
+}
+
+header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  color: #ffffff;
+}
+
+header nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+header nav li {
+  display: inline-block;
+  margin-right: 1.5rem;
+}
+
+header nav li:last-child {
+  margin-right: 0;
+}
+
+header nav a {
+  color: #e0e0e0;
+  text-decoration: none;
+}
+
+header nav a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+section {
+  margin-bottom: 2rem;
+}
+
+section h2 {
+  margin-top: 0;
+  font-size: 1.4rem;
+}
+
+.transaction-form {
+  padding: 1.25rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: #ffffff;
+}
+
+.transaction-form:focus-within {
+  border-color: #37474f;
+}
+
+.form-field {
+  margin-bottom: 1rem;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.form-field input,
+.form-field select {
+  width: 100%;
+  padding: 0.5rem;
+  font: inherit;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background-color: #ffffff;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  border-color: #2e7d32;
+  outline: none;
+}
+
+.transaction-form button {
+  padding: 0.6rem 1.2rem;
+  font: inherit;
+  color: #ffffff;
+  background-color: #2e7d32;
+  border: 1px solid #2e7d32;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.transaction-form button:hover,
+.transaction-form button:focus {
+  background-color: #1b5e20;
+  border-color: #1b5e20;
+}
+
+.card {
+  padding: 10px;
+  border-bottom: 1px solid #d1d5db;
+  border-radius: 0;
+  margin-bottom: 0;
+  background-color: #ffffff;
+}
+
+.card h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+.card p {
+  margin: 0 0 0.25rem;
+}
+
+.card time {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.amount {
+  font-weight: 700;
+}
+
+.amount--income {
+  color: #2e7d32;
+}
+
+.amount--expense {
+  color: #c62828;
+}
+
+aside {
+  max-width: 800px;
+  margin: 0 auto 2rem;
+  padding: 1.25rem;
+  background-color: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  border-radius: 6px;
+}
+
+aside h2 {
+  margin-top: 0;
+}
+
+.balance-total {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2933;
+}
+
+aside ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+footer {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: center;
+  border-top: 1px solid #d1d5db;
+}
+
+footer p {
+  margin: 0;
+}

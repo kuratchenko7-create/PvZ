@@ -23,18 +23,18 @@
 
     <section id="add-transaction">
       <h2>Додати операцію</h2>
-      <form action="#" method="post">
-        <div>
+      <form class="transaction-form" action="#" method="post">
+        <div class="form-field">
           <label for="transaction-title">Назва / опис операції:</label>
           <input type="text" id="transaction-title" name="title" required placeholder="Наприклад, Обід в їдальні">
         </div>
 
-        <div>
+        <div class="form-field">
           <label for="transaction-amount">Сума (грн):</label>
           <input type="number" id="transaction-amount" name="amount" step="0.01" required placeholder="120.00">
         </div>
 
-        <div>
+        <div class="form-field">
           <label for="transaction-type">Тип операції:</label>
           <select id="transaction-type" name="type">
             <option value="expense">Витрата</option>
@@ -42,7 +42,7 @@
           </select>
         </div>
 
-        <div>
+        <div class="form-field">
           <label for="transaction-category">Категорія:</label>
           <select id="transaction-category" name="category">
             <option value="food">Харчування</option>
@@ -53,7 +53,7 @@
           </select>
         </div>
 
-        <div>
+        <div class="form-field">
           <label for="transaction-date">Дата:</label>
           <input type="date" id="transaction-date" name="date" required>
         </div>
@@ -65,20 +65,20 @@
     <section id="transactions-list">
       <h2>Операції</h2>
 
-      <article>
-        <h3>-150.00 грн — Харчування</h3>
+      <article class="card">
+        <h3><span class="amount amount--expense">-150.00 грн</span> — Харчування</h3>
         <p><strong>Опис:</strong> Комплексний обід</p>
         <time datetime="2026-09-13">13 вересня 2026</time>
       </article>
 
-      <article>
-        <h3>-30.00 грн — Транспорт</h3>
+      <article class="card">
+        <h3><span class="amount amount--expense">-30.00 грн</span> — Транспорт</h3>
         <p><strong>Опис:</strong> Поїздка на метро</p>
         <time datetime="2026-09-12">12 вересня 2026</time>
       </article>
 
-      <article>
-        <h3>+1000.00 грн — Дохід</h3>
+      <article class="card">
+        <h3><span class="amount amount--income">+1000.00 грн</span> — Дохід</h3>
         <p><strong>Опис:</strong> Кишенькові кошти</p>
         <time datetime="2026-09-10">10 вересня 2026</time>
       </article>
@@ -87,10 +87,10 @@
 
   <aside id="balance-summary">
     <h2>Підсумковий баланс</h2>
-    <p><strong>Поточний залишок:</strong> <span>820.00 грн</span></p>
+    <p><strong>Поточний залишок:</strong> <span class="balance-total">820.00 грн</span></p>
     <ul>
-      <li>Загальний дохід: +1000.00 грн</li>
-      <li>Загальні витрати: -180.00 грн</li>
+      <li>Загальний дохід: <span class="amount amount--income">+1000.00 грн</span></li>
+      <li>Загальні витрати: <span class="amount amount--expense">-180.00 грн</span></li>
     </ul>
   </aside>
 
