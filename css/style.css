@@ -16,31 +16,35 @@ body {
   background-color: #f4f5f7;
 }
 
-header {
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Header: Flexbox (mobile — column) */
+.site-header {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   background: linear-gradient(90deg, #263238, #37474f);
-  padding: 1rem 1.5rem;
+  padding: 1rem;
   border-bottom: 3px solid #2e7d32;
 }
 
-header h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.75rem;
+.site-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
   color: #ffffff;
 }
 
-header nav ul {
+.site-header nav ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-header nav li {
-  display: inline-block;
-  margin-right: 1.5rem;
-}
-
-header nav li:last-child {
-  margin-right: 0;
 }
 
 header nav a {
@@ -53,10 +57,18 @@ header nav a:hover {
   text-decoration: underline;
 }
 
-main {
+/* Layout: main + aside (mobile — aside під main) */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
   max-width: 800px;
   margin: 0 auto;
   padding: 1.5rem 1rem;
+}
+
+main {
+  min-width: 0;
 }
 
 section {
@@ -121,24 +133,34 @@ section h2 {
   border-color: #1b5e20;
 }
 
-.card {
-  padding: 10px;
-  border-bottom: 1px solid #d1d5db;
-  border-radius: 0;
-  margin-bottom: 0;
+/* Transactions: рядки-список (mobile — вертикальний список) */
+.transactions {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
   background-color: #ffffff;
 }
 
-.card h3 {
+.transaction {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.transaction:last-child {
+  border-bottom: none;
+}
+
+.transaction h3 {
   margin: 0 0 0.25rem;
   font-size: 1.1rem;
 }
 
-.card p {
+.transaction p {
   margin: 0 0 0.25rem;
 }
 
-.card time {
+.transaction time {
   font-size: 0.875rem;
   color: #6b7280;
 }
@@ -156,8 +178,7 @@ section h2 {
 }
 
 aside {
-  max-width: 800px;
-  margin: 0 auto 2rem;
+  align-self: start;
   padding: 1.25rem;
   background-color: #e8f5e9;
   border: 1px solid #a5d6a7;
@@ -190,4 +211,72 @@ footer {
 
 footer p {
   margin: 0;
+}
+
+/* Tablet */
+@media (min-width: 600px) {
+  .site-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .site-header nav ul {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  /* Сума / категорія / дата — поруч */
+  .form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .form-row .form-field {
+    flex: 1 1 0;
+    min-width: 140px;
+  }
+
+  /* Рядок операції: сума й опис зліва, дата справа */
+  .transaction {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 1rem;
+  }
+
+  .transaction h3,
+  .transaction p {
+    margin: 0;
+  }
+
+  .transaction time {
+    margin-left: auto;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .site-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2.5rem;
+  }
+
+  .site-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .layout {
+    grid-template-columns: 3fr 1fr;
+    gap: 2rem;
+    max-width: 1200px;
+    padding: 2rem 2.5rem;
+  }
+
+  aside {
+    position: sticky;
+    top: 1rem;
+  }
 }
