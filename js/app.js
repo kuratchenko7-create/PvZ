@@ -1,5 +1,7 @@
 console.log('script.js підключено');
 
+document.querySelector('.static-example').remove();
+
 // Масив операцій: сума та тип ('дохід' або 'витрата')
 const transactions = [
   { amount: 1000, type: 'дохід' },
@@ -9,10 +11,28 @@ const transactions = [
   { amount: 75, type: 'витрата' },
 ];
 
-// Обчислює відсоток частини від загального значення (округлено до цілого)
+const listContainer = document.querySelector('#transactions-list');
+
+function renderTransactions(list) {
+  list.forEach(({ amount, type }) => {
+    const item = document.createElement('li');
+    item.classList.add('transaction-item');
+    item.classList.add(type === 'дохід' ? 'income' : 'expense');
+    item.dataset.amount = amount;
+
+    const text = document.createElement('span');
+    text.classList.add('transaction-item__text');
+    text.textContent = `${amount} грн (${type})`;
+
+    item.append(text);
+    listContainer.append(item);
+  });
+}
+
+renderTransactions(transactions);
+
 const toPercent = (part, total) => Math.round(part / total * 100);
 
-// Проходить циклом for по операціях, рахує баланс, дохід і витрати та виводить підсумок у консоль
 function calculateBalance(list) {
   let balance = 0;
   let totalIncome = 0;
@@ -37,7 +57,6 @@ function calculateBalance(list) {
   return { balance, totalIncome, totalExpense };
 }
 
-// Позначає, чи підсумковий баланс додатний
 function classifyBalance(balance) {
   if (balance > 0) {
     console.log('Баланс додатний');
@@ -49,3 +68,7 @@ function classifyBalance(balance) {
 const { balance, totalIncome, totalExpense } = calculateBalance(transactions);
 classifyBalance(balance);
 console.log(`Витрачено ${toPercent(totalExpense, totalIncome)}% доходу`);
+
+const balanceElement = document.querySelector('#balance');
+const sign = balance > 0 ? '+' : '';
+balanceElement.textContent = `${sign}${balance.toFixed(2)} грн`;

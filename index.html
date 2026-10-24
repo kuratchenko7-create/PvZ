@@ -19,7 +19,7 @@
       <ul>
         <li><a href="#balance-summary">Підсумковий баланс</a></li>
         <li><a href="#add-transaction">Додати операцію</a></li>
-        <li><a href="#transactions-list">Історія операцій</a></li>
+        <li><a href="#history">Історія операцій</a></li>
       </ul>
     </nav>
   </header>
@@ -29,7 +29,7 @@
     <section id="balance-summary" class="balance-hero balance-hero--positive" aria-labelledby="balance-title">
       <div class="balance-hero__main">
         <h2 id="balance-title" class="balance-hero__label">Поточний залишок</h2>
-        <p class="balance-hero__value">+820.00 грн</p>
+        <p id="balance" class="balance-hero__value">+820.00 грн</p>
         <p class="balance-hero__status">✓ Бюджет у нормі — витрачено 18% доходу</p>
         <div class="budget-bar" style="--spent: 18%" aria-hidden="true"><span></span></div>
       </div>
@@ -90,37 +90,15 @@
         </form>
       </section>
 
-      <section id="transactions-list">
-        <h2>Операції</h2>
+      <section id="history" aria-labelledby="history-title">
+        <h2 id="history-title">Операції</h2>
 
-        <div class="transactions">
-          <article class="transaction">
-            <h3 class="transaction__title">Комплексний обід</h3>
-            <div class="transaction__meta">
-              <span class="tag tag--food">Харчування</span>
-              <time datetime="2026-09-13">13 вересня 2026</time>
-            </div>
-            <span class="amount amount--expense transaction__amount">−150.00 грн</span>
-          </article>
-
-          <article class="transaction">
-            <h3 class="transaction__title">Поїздка на метро</h3>
-            <div class="transaction__meta">
-              <span class="tag tag--transport">Транспорт</span>
-              <time datetime="2026-09-12">12 вересня 2026</time>
-            </div>
-            <span class="amount amount--expense transaction__amount">−30.00 грн</span>
-          </article>
-
-          <article class="transaction">
-            <h3 class="transaction__title">Кишенькові кошти</h3>
-            <div class="transaction__meta">
-              <span class="tag tag--income">Дохід</span>
-              <time datetime="2026-09-10">10 вересня 2026</time>
-            </div>
-            <span class="amount amount--income transaction__amount">+1000.00 грн</span>
-          </article>
-        </div>
+        <ul id="transactions-list" class="transactions">
+          <!-- Статичний приклад-орієнтир; видаляється у js/app.js -->
+          <li class="transaction-item expense static-example" data-amount="150">
+            <span class="transaction-item__text">150 грн (витрата)</span>
+          </li>
+        </ul>
       </section>
     </main>
 
