@@ -1,3 +1,6 @@
+const API_URL = 'https://jsonplaceholder.typicode.com/comments?postId=2';
+const CONVERTER_URL = 'https://api.frankfurter.dev/v1/latest';
+
 console.log('script.js підключено');
 
 document.querySelector('.static-example').remove();
@@ -13,10 +16,10 @@ const transactions = [
 
 const listContainer = document.querySelector('#transactions-list');
 
-function renderTransactions(list) {
-  listContainer.replaceChildren();
+function renderTransactions(list, container = listContainer) {
+  container.replaceChildren();
 
-  list.forEach(({ amount, type, category }) => {
+  list.forEach(({ amount, type, category, comment }) => {
     const item = document.createElement('li');
     item.classList.add('transaction-item');
     item.classList.add(type === 'дохід' ? 'income' : 'expense');
@@ -27,7 +30,15 @@ function renderTransactions(list) {
     text.textContent = `${amount} грн (${type}, ${category})`;
 
     item.append(text);
-    listContainer.append(item);
+
+    if (comment) {
+      const commentText = document.createElement('p');
+      commentText.classList.add('transaction-item__comment');
+      commentText.textContent = comment;
+      item.append(commentText);
+    }
+
+    container.append(item);
   });
 }
 
@@ -112,4 +123,87 @@ amountInput.addEventListener('input', () => {
   }
 
   amountInput.reportValidity();
+});
+
+const apiListContainer = document.querySelector('#api-transactions-list');
+const reloadButton = document.querySelector('#reload-button');
+const apiStatus = document.querySelector('#api-status');
+const apiError = document.querySelector('#api-error');
+
+async function loadData() {
+  reloadButton.disabled = true;
+  apiStatus.hidden = false;
+  apiError.hidden = true;
+
+  try {
+    const response = await fetch(API_URL);
+
+    if (!response.ok) {
+      throw new Error(`Помилка HTTP: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log(data);
+
+    const apiTransactions = data.map(({ id, name, body }) => ({
+      amount: id * 10,
+      type: 'витрата',
+      category: name,
+      comment: body,
+    }));
+
+    renderTransactions(apiTransactions, apiListContainer);
+  } catch (error) {
+    apiError.textContent = 'Не вдалося завантажити операції. Перевірте з\'єднання з інтернетом і натисніть «Оновити».';
+    apiError.hidden = false;
+    console.error('Помилка завантаження операцій:', error);
+  } finally {
+    reloadButton.disabled = false;
+    apiStatus.hidden = true;
+  }
+}
+
+reloadButton.addEventListener('click', loadData);
+
+loadData();
+
+const converterForm = document.querySelector('#converter-form');
+const converterAmount = document.querySelector('#converter-amount');
+const converterFrom = document.querySelector('#converter-from');
+const converterTo = document.querySelector('#converter-to');
+const converterButton = document.querySelector('#converter-button');
+const converterResult = document.querySelector('#converter-result');
+
+async function convertCurrency() {
+  const amount = Number(converterAmount.value);
+  const from = converterFrom.value;
+  const to = converterTo.value;
+
+  converterButton.disabled = true;
+  converterResult.classList.remove('status--error');
+  converterResult.textContent = 'Конвертація…';
+
+  try {
+    const response = await fetch(`${CONVERTER_URL}?amount=${amount}&from=${from}&to=${to}`);
+
+    if (!response.ok) {
+      throw new Error(`Помилка HTTP: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log(data);
+
+    converterResult.textContent = `${amount.toFixed(2)} ${from} = ${data.rates[to].toFixed(2)} ${to} (курс на ${data.date})`;
+  } catch (error) {
+    converterResult.classList.add('status--error');
+    converterResult.textContent = 'Не вдалося конвертувати суму. Перевірте з\'єднання та оберіть різні валюти.';
+    console.error('Помилка конвертації:', error);
+  } finally {
+    converterButton.disabled = false;
+  }
+}
+
+converterForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  convertCurrency();
 });
