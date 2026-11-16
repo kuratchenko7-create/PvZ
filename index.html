@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.13/vue.global.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
@@ -26,12 +27,12 @@
     </nav>
   </header>
 
-  <div class="layout">
+  <div id="app" class="layout" v-cloak>
 
-    <section id="balance-summary" class="balance-hero balance-hero--positive" aria-labelledby="balance-title">
+    <section id="balance-summary" class="balance-hero" :class="balance > 0 ? 'balance-hero--positive' : 'balance-hero--negative'" aria-labelledby="balance-title">
       <div class="balance-hero__main">
         <h2 id="balance-title" class="balance-hero__label">Поточний залишок</h2>
-        <p id="balance" class="balance-hero__value">+820.00 грн</p>
+        <p id="balance" class="balance-hero__value">{{ formattedBalance }}</p>
         <p class="balance-hero__status">✓ Бюджет у нормі — витрачено 18% доходу</p>
         <div class="budget-bar" style="--spent: 18%" aria-hidden="true"><span></span></div>
       </div>
@@ -51,17 +52,17 @@
 
       <section id="add-transaction">
         <h2>Додати операцію</h2>
-        <form id="transaction-form" class="transaction-form" action="#" method="post">
+        <form id="transaction-form" class="transaction-form" action="#" method="post" @submit.prevent="addTransaction">
           <div class="form-row">
             <div class="form-field">
               <label for="transaction-amount">Сума (грн):</label>
-              <input type="number" id="transaction-amount" name="amount" step="0.01" min="0.01" required placeholder="120.00">
+              <input type="number" id="transaction-amount" name="amount" step="0.01" min="0.01" required placeholder="120.00" v-model="newTransaction.amount" @input="validateAmount">
             </div>
 
             <div class="form-field">
               <label for="transaction-type">Тип операції:</label>
-              <select id="transaction-type" name="type" required>
-                <option value="" disabled selected>Оберіть тип</option>
+              <select id="transaction-type" name="type" required v-model="newTransaction.type">
+                <option value="" disabled>Оберіть тип</option>
                 <option value="витрата">Витрата</option>
                 <option value="дохід">Дохід</option>
               </select>
@@ -69,7 +70,7 @@
 
             <div class="form-field">
               <label for="transaction-category">Категорія:</label>
-              <input type="text" id="transaction-category" name="category" required placeholder="Наприклад, Харчування">
+              <input type="text" id="transaction-category" name="category" required placeholder="Наприклад, Харчування" v-model="newTransaction.category">
             </div>
           </div>
 
@@ -81,33 +82,50 @@
         <h2 id="history-title">Операції</h2>
 
         <ul id="transactions-list" class="transactions">
-          <!-- Статичний приклад-орієнтир; видаляється у js/app.js -->
-          <li class="transaction-item expense static-example" data-amount="150">
-            <span class="transaction-item__text">150 грн (витрата)</span>
-          </li>
+          <li
+            is="vue:expense-row"
+            v-for="transaction in transactions"
+            :key="transaction.id"
+            :amount="transaction.amount"
+            :type="transaction.type"
+            :category="transaction.category"
+            @remove="removeTransaction(transaction.id)"
+          ></li>
         </ul>
       </section>
 
       <section id="api-history" aria-labelledby="api-history-title">
         <h2 id="api-history-title">Операції з сервера</h2>
-        <button type="button" id="reload-button" class="button">Оновити</button>
-        <p id="api-status" class="status" hidden>Завантаження…</p>
-        <p id="api-error" class="status status--error" role="alert" hidden></p>
-        <ul id="api-transactions-list" class="transactions"></ul>
+        <button type="button" id="reload-button" class="button" :disabled="apiLoading" @click="loadData">Оновити</button>
+        <p id="api-status" class="status" v-if="apiLoading">Завантаження…</p>
+        <p id="api-error" class="status status--error" role="alert" v-if="apiError">{{ apiError }}</p>
+        <ul id="api-transactions-list" class="transactions">
+          <li
+            is="vue:expense-row"
+            v-for="transaction in apiTransactions"
+            :key="transaction.id"
+            :amount="transaction.amount"
+            :type="transaction.type"
+            :category="transaction.category"
+            @remove="removeApiTransaction(transaction.id)"
+          >
+            <p class="transaction-item__comment">{{ transaction.comment }}</p>
+          </li>
+        </ul>
       </section>
 
       <section id="converter" aria-labelledby="converter-title">
         <h2 id="converter-title">Конвертер валют</h2>
-        <form id="converter-form" class="transaction-form">
+        <form id="converter-form" class="transaction-form" @submit.prevent="convertCurrency">
           <div class="form-row">
             <div class="form-field">
               <label for="converter-amount">Сума:</label>
-              <input type="number" id="converter-amount" name="amount" step="0.01" min="0.01" required placeholder="100.00">
+              <input type="number" id="converter-amount" name="amount" step="0.01" min="0.01" required placeholder="100.00" v-model="converter.amount">
             </div>
 
             <div class="form-field">
               <label for="converter-from">З валюти:</label>
-              <select id="converter-from" name="from" required>
+              <select id="converter-from" name="from" required v-model="converter.from">
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
                 <option value="PLN">PLN</option>
@@ -117,7 +135,7 @@
 
             <div class="form-field">
               <label for="converter-to">У валюту:</label>
-              <select id="converter-to" name="to" required>
+              <select id="converter-to" name="to" required v-model="converter.to">
                 <option value="EUR">EUR</option>
                 <option value="USD">USD</option>
                 <option value="PLN">PLN</option>
@@ -126,8 +144,8 @@
             </div>
           </div>
 
-          <button type="submit" id="converter-button">Конвертувати</button>
-          <p id="converter-result" class="status" aria-live="polite"></p>
+          <button type="submit" id="converter-button" :disabled="converterLoading">Конвертувати</button>
+          <p id="converter-result" class="status" :class="{ 'status--error': converterError }" aria-live="polite">{{ converterResult }}</p>
         </form>
       </section>
     </main>
