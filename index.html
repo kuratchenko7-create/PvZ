@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.13/vue.global.js" defer></script>
+  <script src="js/storage.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
@@ -33,30 +34,33 @@
       <div class="balance-hero__main">
         <h2 id="balance-title" class="balance-hero__label">Поточний залишок</h2>
         <p id="balance" class="balance-hero__value">{{ formattedBalance }}</p>
-        <p class="balance-hero__status">✓ Бюджет у нормі — витрачено 18% доходу</p>
-        <div class="budget-bar" style="--spent: 18%" aria-hidden="true"><span></span></div>
+        <p class="balance-hero__status">{{ budgetStatus }}</p>
+        <div class="budget-bar" :style="{ '--spent': Math.min(spentPercent, 100) + '%' }" aria-hidden="true"><span></span></div>
       </div>
       <dl class="balance-hero__stats">
         <div>
           <dt>Загальний дохід</dt>
-          <dd class="amount amount--income">+1000.00 грн</dd>
+          <dd class="amount amount--income">+{{ formatMoney(totalIncome) }}</dd>
         </div>
         <div>
           <dt>Загальні витрати</dt>
-          <dd class="amount amount--expense">−180.00 грн</dd>
+          <dd class="amount amount--expense">−{{ formatMoney(totalExpense) }}</dd>
         </div>
       </dl>
     </section>
 
     <main>
 
+      <p class="status status--error" role="alert" v-if="storageError">{{ storageError }}</p>
+      <p class="status" role="status" v-if="storageNotice">{{ storageNotice }}</p>
+
       <section id="add-transaction">
-        <h2>Додати операцію</h2>
+        <h2>{{ editingId !== null ? 'Редагувати операцію' : 'Додати операцію' }}</h2>
         <form id="transaction-form" class="transaction-form" action="#" method="post" @submit.prevent="addTransaction">
           <div class="form-row">
             <div class="form-field">
               <label for="transaction-amount">Сума (грн):</label>
-              <input type="number" id="transaction-amount" name="amount" step="0.01" min="0.01" required placeholder="120.00" v-model="newTransaction.amount" @input="validateAmount">
+              <input type="number" id="transaction-amount" name="amount" step="0.01" min="0.01" required placeholder="120.00" ref="amountInput" v-model="newTransaction.amount" @input="validateAmount">
             </div>
 
             <div class="form-field">
@@ -70,25 +74,46 @@
 
             <div class="form-field">
               <label for="transaction-category">Категорія:</label>
-              <input type="text" id="transaction-category" name="category" required placeholder="Наприклад, Харчування" v-model="newTransaction.category">
+              <input type="text" id="transaction-category" name="category" required placeholder="Наприклад, Харчування" list="category-options" v-model="newTransaction.category">
+              <datalist id="category-options">
+                <option value="Харчування"></option>
+                <option value="Транспорт"></option>
+                <option value="Розваги"></option>
+                <option value="Житло"></option>
+                <option value="Стипендія"></option>
+              </datalist>
+            </div>
+
+            <div class="form-field">
+              <label for="transaction-date">Дата:</label>
+              <input type="date" id="transaction-date" name="date" required v-model="newTransaction.date">
             </div>
           </div>
 
-          <button type="submit">Зберегти операцію</button>
+          <div class="form-actions">
+            <button type="submit" :disabled="storageLoading">{{ editingId !== null ? 'Зберегти зміни' : 'Зберегти операцію' }}</button>
+            <button type="button" class="button-secondary" v-if="editingId !== null" @click="cancelEdit">Скасувати</button>
+          </div>
         </form>
       </section>
 
       <section id="history" aria-labelledby="history-title">
         <h2 id="history-title">Операції</h2>
 
-        <ul id="transactions-list" class="transactions">
+        <p class="status" v-if="storageLoading">Завантаження з бази…</p>
+        <p class="status" v-else-if="transactions.length === 0">Поки що немає жодної операції. Додайте першу через форму вище.</p>
+
+        <ul id="transactions-list" class="transactions" v-if="transactions.length > 0">
           <li
             is="vue:expense-row"
-            v-for="transaction in transactions"
+            v-for="transaction in sortedTransactions"
             :key="transaction.id"
             :amount="transaction.amount"
             :type="transaction.type"
             :category="transaction.category"
+            :date="transaction.date"
+            editable
+            @edit="startEdit(transaction)"
             @remove="removeTransaction(transaction.id)"
           ></li>
         </ul>
@@ -152,13 +177,13 @@
 
     <aside class="category-summary" aria-labelledby="categories-title">
       <h2 id="categories-title">Витрати за категоріями</h2>
-      <ul class="category-list">
-        <li><span class="tag tag--food">Харчування</span> <span class="amount amount--expense">−150.00 грн</span></li>
-        <li><span class="tag tag--transport">Транспорт</span> <span class="amount amount--expense">−30.00 грн</span></li>
-        <li><span class="tag tag--entertainment">Розваги</span> <span class="amount amount--zero">0.00 грн</span></li>
-        <li><span class="tag tag--housing">Житло</span> <span class="amount amount--zero">0.00 грн</span></li>
-        <li><span class="tag tag--other">Інше</span> <span class="amount amount--zero">0.00 грн</span></li>
+      <ul class="category-list" v-if="expensesByCategory.length > 0">
+        <li v-for="item in expensesByCategory" :key="item.category">
+          <span class="tag" :class="item.tagClass">{{ item.category }}</span>
+          <span class="amount amount--expense">−{{ formatMoney(item.total) }}</span>
+        </li>
       </ul>
+      <p class="status" v-else>Витрат поки немає.</p>
     </aside>
   </div>
 

@@ -4,24 +4,64 @@ const API_URL = 'https://jsonplaceholder.typicode.com/comments?postId=2';
 const CONVERTER_URL = 'https://api.frankfurter.dev/v1/latest';
 
 // Функцію renderTransactions із практикуму 7 видалено: список тепер рендерить компонент ExpenseRow через v-for.
+// Робота зі сховищами (localStorage, IndexedDB, міграція) винесена в js/storage.js.
+
+// Режим ?storage=local вмикає роботу лише з localStorage — для перевірки кроку 4 у DevTools.
+const FORCE_LOCAL_STORAGE = new URLSearchParams(location.search).get('storage') === 'local';
+
+const CATEGORY_TAGS = {
+  'харчування': 'tag--food',
+  'транспорт': 'tag--transport',
+  'розваги': 'tag--entertainment',
+  'житло': 'tag--housing',
+};
+
+function todayISO() {
+  // Локаль sv-SE дає формат YYYY-MM-DD у місцевому часовому поясі.
+  return new Date().toLocaleDateString('sv-SE');
+}
+
+function emptyTransaction() {
+  return { amount: '', type: '', category: '', date: todayISO() };
+}
+
+function formatMoney(value) {
+  return `${value.toFixed(2)} грн`;
+}
 
 const ExpenseRow = {
   props: {
     amount: { type: Number, required: true },
     type: { type: String, required: true },
     category: { type: String, required: true },
+    date: { type: String, default: '' },
+    editable: { type: Boolean, default: false },
   },
-  emits: ['remove'],
+  emits: ['remove', 'edit'],
+  computed: {
+    formattedDate() {
+      return this.date ? new Date(`${this.date}T00:00`).toLocaleDateString('uk-UA') : '';
+    },
+  },
   methods: {
     remove() {
       this.$emit('remove');
+    },
+    edit() {
+      this.$emit('edit');
     },
   },
   template: `
     <li class="transaction-item" :class="type === 'дохід' ? 'income' : 'expense'">
       <div class="transaction-item__row">
-        <span class="transaction-item__text">{{ amount }} грн ({{ type }}, {{ category }})</span>
-        <button type="button" class="transaction-item__remove" @click="remove">Видалити</button>
+        <span class="transaction-item__text">
+          {{ amount }} грн ({{ type }}, {{ category }})
+          <time v-if="date" class="transaction-item__date" :datetime="date">{{ formattedDate }}</time>
+        </span>
+        <span class="transaction-item__actions">
+          <button v-if="editable" type="button" class="transaction-item__edit" @click="edit">Редагувати</button>
+          <button type="button" class="transaction-item__remove" @click="remove">Видалити</button>
+        </span>
       </div>
       <slot></slot>
     </li>
@@ -32,14 +72,14 @@ const app = Vue.createApp({
   components: { ExpenseRow },
   data() {
     return {
-      transactions: [
-        { id: 1, amount: 1000, type: 'дохід', category: 'Стипендія' },
-        { id: 2, amount: 150, type: 'витрата', category: 'Харчування' },
-        { id: 3, amount: 30, type: 'витрата', category: 'Транспорт' },
-        { id: 4, amount: 200, type: 'дохід', category: 'Підробіток' },
-        { id: 5, amount: 75, type: 'витрата', category: 'Розваги' },
-      ],
-      newTransaction: { amount: '', type: '', category: '' },
+      // Крок 9. Масив заповнюється з IndexedDB (getAllItems), а не з жорстко заданих даних.
+      transactions: [],
+      newTransaction: emptyTransaction(),
+      editingId: null,
+      storageMode: 'idb', // 'idb' або 'local' (запасний варіант, якщо IndexedDB недоступна)
+      storageLoading: true,
+      storageError: '',
+      storageNotice: '',
       apiTransactions: [],
       apiLoading: false,
       apiError: '',
@@ -57,23 +97,157 @@ const app = Vue.createApp({
       );
     },
     formattedBalance() {
-      const sign = this.balance > 0 ? '+' : '';
-      return `${sign}${this.balance.toFixed(2)} грн`;
+      const sign = this.balance > 0 ? '+' : this.balance < 0 ? '−' : '';
+      return `${sign}${formatMoney(Math.abs(this.balance))}`;
+    },
+    // Нові операції зверху: спершу за датою, потім за id.
+    sortedTransactions() {
+      return [...this.transactions].sort(
+        (a, b) => (b.date || '').localeCompare(a.date || '') || b.id - a.id,
+      );
+    },
+    totalIncome() {
+      return this.transactions
+        .filter(({ type }) => type === 'дохід')
+        .reduce((sum, { amount }) => sum + amount, 0);
+    },
+    totalExpense() {
+      return this.transactions
+        .filter(({ type }) => type === 'витрата')
+        .reduce((sum, { amount }) => sum + amount, 0);
+    },
+    spentPercent() {
+      if (this.totalIncome === 0) {
+        return this.totalExpense > 0 ? 100 : 0;
+      }
+      return Math.round((this.totalExpense / this.totalIncome) * 100);
+    },
+    budgetStatus() {
+      if (this.balance < 0) {
+        return `✗ Витрати перевищують дохід на ${formatMoney(-this.balance)}`;
+      }
+      return `✓ Бюджет у нормі — витрачено ${this.spentPercent}% доходу`;
+    },
+    // Сума витрат за категоріями — клієнтська агрегація масиву, отриманого через getAllItems().
+    expensesByCategory() {
+      const totals = this.transactions
+        .filter(({ type }) => type === 'витрата')
+        .reduce((acc, { category, amount }) => {
+          acc[category] = (acc[category] || 0) + amount;
+          return acc;
+        }, {});
+
+      return Object.entries(totals)
+        .map(([category, total]) => ({
+          category,
+          total,
+          tagClass: CATEGORY_TAGS[category.toLowerCase()] || 'tag--other',
+        }))
+        .sort((a, b) => b.total - a.total);
     },
   },
   methods: {
-    // Додавання нової операції: запис у масив, перемалювання списку й оновлення балансу
-    addTransaction() {
-      const { amount, type, category } = this.newTransaction;
+    formatMoney,
 
-      this.transactions.push({
-        id: Date.now(),
+    // Крок 9 + 11. Відкриття бази, міграція і перше завантаження списку.
+    async initStorage() {
+      this.storageLoading = true;
+
+      if (FORCE_LOCAL_STORAGE) {
+        this.useLocalStorage();
+        this.storageNotice = 'Режим localStorage (?storage=local): дані зберігаються в Local Storage.';
+        this.storageLoading = false;
+        return;
+      }
+
+      try {
+        await openDB();
+        const migrated = await migrateFromLocalStorage();
+
+        if (migrated > 0) {
+          this.storageNotice = `Перенесено ${migrated} операцій із localStorage в IndexedDB.`;
+        }
+
+        await this.refreshTransactions();
+      } catch (error) {
+        console.error('IndexedDB недоступна:', error);
+        this.storageError = 'Не вдалося відкрити базу даних браузера (IndexedDB). '
+          + 'Можливо, увімкнено приватний режим або заборонено збереження даних сайтів. '
+          + 'Операції тимчасово зберігатимуться в localStorage.';
+        this.useLocalStorage();
+      } finally {
+        this.storageLoading = false;
+      }
+    },
+
+    useLocalStorage() {
+      this.storageMode = 'local';
+      this.transactions = loadFromLocalStorage() || [];
+    },
+
+    // Після кожної CRUD-операції список перечитується з бази.
+    async refreshTransactions() {
+      this.transactions = await getAllItems();
+    },
+
+    // Крок 3. Запасний шлях: зберігаємо в localStorage після кожної зміни стану.
+    persistLocal() {
+      saveToLocalStorage(this.transactions);
+    },
+
+    // Додавання нової або збереження відредагованої операції.
+    async addTransaction() {
+      const { amount, type, category, date } = this.newTransaction;
+      const record = {
         amount: Number(amount),
         type,
         category: category.trim(),
-      });
+        date,
+      };
 
-      this.newTransaction = { amount: '', type: '', category: '' };
+      try {
+        if (this.storageMode === 'idb') {
+          if (this.editingId !== null) {
+            await updateItem({ ...record, id: this.editingId });
+          } else {
+            await addItem(record); // id згенерує IndexedDB (autoIncrement)
+          }
+          await this.refreshTransactions();
+        } else {
+          if (this.editingId !== null) {
+            this.transactions = this.transactions.map((t) => (
+              t.id === this.editingId ? { ...record, id: this.editingId } : t
+            ));
+          } else {
+            this.transactions.push({ ...record, id: Date.now() });
+          }
+          this.persistLocal();
+        }
+
+        this.cancelEdit();
+      } catch (error) {
+        console.error('Помилка збереження операції:', error);
+        this.storageError = 'Не вдалося зберегти операцію. Спробуйте ще раз.';
+      }
+    },
+
+    startEdit(transaction) {
+      this.editingId = transaction.id;
+      this.newTransaction = {
+        amount: String(transaction.amount),
+        type: transaction.type,
+        category: transaction.category,
+        date: transaction.date || todayISO(),
+      };
+      this.$nextTick(() => {
+        this.$refs.amountInput.focus();
+        this.$refs.amountInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    },
+
+    cancelEdit() {
+      this.editingId = null;
+      this.newTransaction = emptyTransaction();
     },
 
     // Додаткова валідація суми: нуль чи від'ємне значення → власне повідомлення
@@ -89,8 +263,23 @@ const app = Vue.createApp({
       input.reportValidity();
     },
 
-    removeTransaction(id) {
-      this.transactions = this.transactions.filter((transaction) => transaction.id !== id);
+    async removeTransaction(id) {
+      try {
+        if (this.storageMode === 'idb') {
+          await deleteItem(id);
+          await this.refreshTransactions();
+        } else {
+          this.transactions = this.transactions.filter((transaction) => transaction.id !== id);
+          this.persistLocal();
+        }
+
+        if (this.editingId === id) {
+          this.cancelEdit();
+        }
+      } catch (error) {
+        console.error('Помилка видалення операції:', error);
+        this.storageError = 'Не вдалося видалити операцію. Спробуйте ще раз.';
+      }
     },
 
     removeApiTransaction(id) {
@@ -155,6 +344,7 @@ const app = Vue.createApp({
     },
   },
   mounted() {
+    this.initStorage();
     this.loadData();
   },
 });
