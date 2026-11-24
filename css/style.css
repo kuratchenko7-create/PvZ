@@ -513,7 +513,7 @@ ul.transactions {
   content: "";
   width: 0.5rem;
   height: 0.5rem;
-  background-color: currentColor;
+  background-color: var(--swatch, currentColor);
   border-radius: 50%;
 }
 
@@ -535,6 +535,15 @@ ul.transactions {
 
 .category-summary h2 {
   font-size: var(--fs-h3);
+}
+
+.expense-chart {
+  display: block;
+  width: 240px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  margin: 0 auto var(--space-4);
 }
 
 .category-list {

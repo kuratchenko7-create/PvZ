@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.13/vue.global.js" defer></script>
   <script src="js/storage.js" defer></script>
+  <script src="js/chart.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
@@ -177,9 +178,10 @@
 
     <aside class="category-summary" aria-labelledby="categories-title">
       <h2 id="categories-title">Витрати за категоріями</h2>
+      <canvas class="expense-chart" ref="chartCanvas" width="480" height="480" role="img" :aria-label="chartLabel"></canvas>
       <ul class="category-list" v-if="expensesByCategory.length > 0">
         <li v-for="item in expensesByCategory" :key="item.category">
-          <span class="tag" :class="item.tagClass">{{ item.category }}</span>
+          <span class="tag" :class="item.tagClass" :style="{ '--swatch': item.color }">{{ item.category }}</span>
           <span class="amount amount--expense">−{{ formatMoney(item.total) }}</span>
         </li>
       </ul>

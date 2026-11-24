@@ -138,12 +138,30 @@ const app = Vue.createApp({
         }, {});
 
       return Object.entries(totals)
-        .map(([category, total]) => ({
-          category,
-          total,
-          tagClass: CATEGORY_TAGS[category.toLowerCase()] || 'tag--other',
-        }))
+        .map(([category, total]) => {
+          const tagClass = CATEGORY_TAGS[category.toLowerCase()] || 'tag--other';
+          return {
+            category,
+            total,
+            tagClass,
+            color: categoryColor(category, tagClass),
+          };
+        })
         .sort((a, b) => b.total - a.total);
+    },
+    chartLabel() {
+      if (this.expensesByCategory.length === 0) {
+        return 'Діаграма витрат за категоріями: витрат немає';
+      }
+      const parts = this.expensesByCategory.map(({ category, total }) => (
+        `${category} — ${Math.round((total / this.totalExpense) * 100)}%`
+      ));
+      return `Діаграма витрат за категоріями: ${parts.join(', ')}`;
+    },
+  },
+  watch: {
+    expensesByCategory(items) {
+      this.chart.update(items);
     },
   },
   methods: {
@@ -344,8 +362,12 @@ const app = Vue.createApp({
     },
   },
   mounted() {
+    this.chart = new PieChart(this.$refs.chartCanvas);
     this.initStorage();
     this.loadData();
+  },
+  beforeUnmount() {
+    this.chart.destroy();
   },
 });
 
